@@ -7,34 +7,89 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
 		<title>CALTAF Lap Calculator</title>
 
+    <style type="text/css" media="screen">
+
+    .statistic > .value > span{
+      font-size: 2rem;
+    }
+    .statistic.mini > .value > span{
+      font-size: 1rem;
+    }
+    .statistic.mini > .label {
+      font-size: 0.7rem;
+    }
+    .statistic > .label > span{
+      text-transform: none;
+    }
+
+    </style>
+
 	  <script type="text/javascript">
-      function get_m(d_in, u_in){
-        var d_out = 0;
+      function get_m_from_x(d_in, u_in){
+        return convert_m(d_in, u_in, true);
+      }
+      function get_x_from_m(d_in, u_in){
+        return convert_m(d_in, u_in, false);
+      }
+
+      function convert_m(d_in, u_in, x_to_m){
+        var factor = 1;
         switch(u_in){
           case "km":
-            d_out = d_in*1000;
+            factor = 1000;
             break;
           case "m":
-            d_out = d_in*1;
+            factor = 1;
             break;
           case "mi":
-            d_out = d_in*1609.344;
+            factor = 1609.344;
+            break;
+          case "yd":
+            factor = 0.9144;
             break;
           case "ft":
-            d_out = d_in*0.3048;
+            factor = 0.3048;
             break;
           case "pc":
-            d_out = d_in*30856780000000000;
+            factor = 30856780000000000;
             break;
         }
-        return d_out;
+
+        if(!x_to_m) factor = 1/factor;
+        return d_in*factor;
 
       }
-      function pad(n, width, z) {
-        z = z || '0';
-        n = n + '';
-        return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+      function secs_to_parts(secs){
+
+        var parts = {};
+        parts.str = {};
+        parts.h = Math.floor(secs / 3600);
+        secs %= 3600;
+        parts.m = Math.floor(secs / 60);
+        parts.s = secs % 60;
+
+        parts.str.h = parts.h
+                          .toLocaleString('en', {
+                            minimumIntegerDigits:1,
+                            minimumFractionDigits:0,
+                            maximumSignificantDigits:5,
+                            useGrouping:false});
+
+        parts.str.m = parts.m
+                          .toLocaleString('en', {
+                            minimumIntegerDigits:2,
+                            minimumFractionDigits:0,
+                            useGrouping:false});
+
+        parts.str.s = parts.s
+                          .toLocaleString('en', {
+                            minimumIntegerDigits:2,
+                            minimumFractionDigits:2,
+                            maximumFractionDigits:2,
+                            useGrouping:false});
+        return parts;
       }
+
   	  $(document).ready(function() {
 
         $('.selection.dropdown')
@@ -102,28 +157,50 @@
             if(!isNaN(m)) total_time +=  m*60;
             if(!isNaN(s)) total_time +=  s;
 
-            dg_m = get_m(dg, f.form("get value", "goaldistanceunits"));
-            ds_m = get_m(ds, f.form("get value", "splitdistanceunits"));
+            dg_m = get_m_from_x(dg, f.form("get value", "goaldistanceunits"));
+            ds_m = get_m_from_x(ds, f.form("get value", "splitdistanceunits"));
 
             s_p_m = total_time/dg_m;
             split_time_total = s_p_m * ds_m;
 
-            split_hours = Math.floor(split_time_total / 3600);
-            split_time_total %= 3600;
-            split_minutes = Math.floor(split_time_total / 60);
-            split_seconds = split_time_total % 60;
+            var split_parts = secs_to_parts(split_time_total);
+            if(split_parts.h > 0) split_string = split_parts.str.h  + ":";
+            if(split_parts.m > 0) split_string += split_parts.str.m + ":";
+            split_string += split_parts.str.s.substring(0,2);
 
-            if(split_hours > 0) split_string = split_hours + ":";
-            if(split_minutes > 0) split_string +=
-            split_minutes.toLocaleString('en', {minimumIntegerDigits:2,minimumFractionDigits:0,useGrouping:false}) + ":";
+            //remainder
+            var r_d_m = dg_m - Math.floor(dg_m / ds_m) * ds_m;
+            var r_d = get_x_from_m(r_d_m, f.form("get value", "splitdistanceunits"));
+            var r_s = s_p_m * r_d_m;
+            var remainder_parts = secs_to_parts(r_s);
+            var remainder_string = "";
+            if(remainder_parts.h > 0) remainder_string = remainder_parts.str.h  + ":";
+            if(remainder_parts.m > 0) remainder_string += remainder_parts.str.m + ":";
+            remainder_string += remainder_parts.str.s.substring(0,2);
+            r_d_str = r_d.toLocaleString('en', {maximumFractionDigits:1,useGrouping:false});
 
-            split_string += split_seconds.toLocaleString('en', {minimumIntegerDigits:2,minimumFractionDigits:2,maximumFractionDigits:2,useGrouping:false});
+            $('.ui.statistic .value')
+                    .text(split_string)
+                    .append($('<span>')
+                      .text(split_parts.str.s.substring(2,5)));
 
-            $('.ui.statistic .value').text(split_string + "");
-            $('.ui.statistic .label').text("per "+ f.form("get value", "split_distance")+f.form("get value", "splitdistanceunits"));
+            $('.ui.statistic .label')
+                    .text("PER "+ f.form("get value", "split_distance")+" ")
+                    .append($('<span>')
+                      .text(f.form("get value", "splitdistanceunits")));
 
-            if(! $('.ui.transition').transition('is visible')) {
-              $('.ui.transition').transition('drop');
+            $('.ui.mini.statistic .value')
+                    .text(remainder_string)
+                    .append($('<span>')
+                      .text(remainder_parts.str.s.substring(2,5)));
+
+            $('.ui.mini.statistic .label')
+                    .text("for remaining "+ r_d_str +" ")
+                    .append($('<span>')
+                      .text(f.form("get value", "splitdistanceunits")));
+
+            if(! $('.ui.results.transition').transition('is visible')) {
+              $('.ui.results.transition').transition('drop');
             }
 
             return false;
@@ -131,11 +208,54 @@
         });
 
         $('.button.reset').click(function(e){
-          if($('.ui.transition').transition('is visible')){
-            $('.ui.transition').transition('drop');
+          if($('.ui.results.transition').transition('is visible')){
+            $('.ui.results.transition').transition('drop');
           }
         });
 
+        $('.example .button#tenk').click(function(e){
+          $('form.form')
+            .form('set values', {
+                goal_hours        : '',
+                goal_minutes      : '45',
+                goal_seconds      : '',
+                goal_distance     : '10',
+                goaldistanceunits : 'km',
+                split_distance    : '1',
+                splitdistanceunits: 'km'
+              })
+            .form("submit");
+        });
+
+        $('.example .button#fifteen').click(function(e){
+          $('form.form')
+            .form('set values', {
+                goal_hours        : '',
+                goal_minutes      : '4',
+                goal_seconds      : '5.75',
+                goal_distance     : '1500',
+                goaldistanceunits : 'm',
+                split_distance    : '400',
+                splitdistanceunits: 'm'
+              })
+            .form("submit");
+        });
+
+        $('.example .button#threek').click(function(e){
+          $('form.form')
+            .form('set values', {
+                goal_hours        : '',
+                goal_minutes      : '',
+                goal_seconds      : '82',
+                goal_distance     : '400',
+                goaldistanceunits : 'm',
+                split_distance    : '3000',
+                splitdistanceunits: 'm'
+              })
+            .form("submit");
+        });
+
+        $('.accordion').accordion();
 
   	  });
 	  </script>
@@ -146,16 +266,61 @@
   			<div class="ui container">
   				<div class="introduction">
   					<h1 class="ui header">
-  					       CALTAF Lap Calculator
-  					<div class="sub header">Caclutate laps or splits for various races</div>
+  					       Lap Calculator
+  					<div class="sub header">Caclutate lap times or splits for various races</div>
   					</h1>
   				</div>
+          <div class="ui accordion">
+            <div class="active title">
+              <i class="dropdown icon"></i>
+              Introduction
+            </div>
+            <div class="active content">
+              Calculate splits for a goal time over a certain race distance and
+              split length. This calculator was designed for track and field
+              distances, it can also be used for ultra marathons, road races,
+              cycling races, swim races, etc. Just enter your goal time, race
+              distance, and your desired distance for splits.
+            </div>
+            <div class="title">
+              <i class="dropdown icon"></i>
+              Examples
+            </div>
+            <div class="content example">
+              <div class="ui middle aligned divided list">
+                <div class="item">
+                  <div class="right floated content">
+                    <div class="ui tiny button" id="tenk">Use</div>
+                  </div>
+                  <div class="content">
+                    Calculate 1km splits for a 10km race
+                  </div>
+                </div>
+                <div class="item">
+                  <div class="right floated content">
+                    <div class="ui tiny button" id="fifteen">Use</div>
+                  </div>
+                  <div class="content">
+                    Calculate 400m track lap splits for a 1500m race
+                  </div>
+                </div>
+                <div class="item">
+                  <div class="right floated content">
+                    <div class="ui tiny button" id="threek">Use</div>
+                  </div>
+                  <div class="content">
+                    Use split distance larger than race to estimate endtime; Predict 3km race time based on 400m split
+                  </div>
+                </div>
+              </div>
+  					</div>
+          </div>
 
   			</div>
   		</div>
       <div class="ui segment">
 
-        <form class="ui form">
+        <form class="ui tiny form">
           <h4 class="ui dividing header">Goal Performance</h4>
           <div class="three fields">
             <div class="field">
@@ -219,7 +384,7 @@
           <div class="ui reset button">Clear</div>
         </form>
       </div>
-      <div class="ui transition hidden segment ">
+      <div class="ui transition hidden results segment ">
         <div class="ui centered grid">
           <div class="row">
             <div class="ui statistic">
@@ -228,6 +393,16 @@
               </div>
               <div class="label">
                 per km
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="ui grey horizontal mini statistic">
+              <div class="value">
+                01:20.22
+              </div>
+              <div class="label">
+                per 0.5 km
               </div>
             </div>
           </div>
@@ -242,11 +417,17 @@
 			<div class="ui divider"></div>
 		  <div class="ui center aligned container">
 				<div class="ui divided horizontal footer link list">
-					<div class="item">
-						caltaf.ca
+          <div class="item">
+            run with <a href="https://caltaf.com/">Caltaf</a>
+          </div>
+          <div class="item">
+            <a href="https://github.com/tratzla/lapcalculator"><i class="github icon"></i>code at github</a>
 					</div>
 					<div class="item">
-						<a href="https://caltaf.ca"><i class="sun icon"></i></a>
+						urged by <a href="https://lratz.ca" target="_blank">luke</a>
+					</div>
+					<div class="item">
+						<a href="mailto:webmaster@caltaf.com" target="_blank">report bugs</a>
 					</div>
 				</div>
 			</div>
