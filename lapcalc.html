@@ -5,7 +5,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
-		<title>CALTAF Lap Calculator</title>
+		<title>Lap Calculator</title>
 
     <style type="text/css" media="screen">
 
@@ -27,10 +27,22 @@
     .ui.main.container {
     	padding-top: 2em;
     }
+    .hidden.transition {
+    	display: none !important;
+    }
 
     </style>
 
 	  <script type="text/javascript">
+      function build_time_str(parts){
+        string_parts = {};
+        string_parts.time = "";
+        if(parts.h > 0) string_parts.time = parts.str.h  + ":";
+        if(parts.m > 0) string_parts.time += parts.str.m + ":";
+        string_parts.time += parts.str.s.substring(0,2);
+        string_parts.frac = parts.str.s.substring(2,5);
+        return string_parts;
+      }
       function get_m_from_x(d_in, u_in){
         return convert_m(d_in, u_in, true);
       }
@@ -57,7 +69,7 @@
             factor = 0.3048;
             break;
           case "pc":
-            factor = 30856780000000000;
+            factor = 30856775814913673;
             break;
         }
 
@@ -98,12 +110,15 @@
 
   	  $(document).ready(function() {
 
+        var f = $('form.form');
+        var results_segment = $('.ui.results.transition');
+        var remainder_row = $('.remainder.row.transition');
+
         $('.selection.dropdown')
           .dropdown()
         ;
 
-        $('form.form')
-          .form({
+        f.form({
               fields: {
                 goal_distance      : 'decimal',
                 goaldistanceunits  : 'empty',
@@ -138,7 +153,6 @@
               }
         }).api({
           beforeSend: function(settings){
-            var f = $('form.form');
             var h = parseFloat(f.form("get value", "goal_hours"));
             var m = parseFloat(f.form("get value", "goal_minutes"));
             var s = parseFloat(f.form("get value", "goal_seconds"));
@@ -149,11 +163,13 @@
             var ds_m = 0;
             var s_p_m = 0;
             var split_time_total = 0;
-            var split_hours = 0;
-            var split_minutes = 0;
-            var split_seconds = 0;
-            var split_string = "";
-
+            var split_parts = {};
+            var split_string = {};
+            var r_d_m = 0;
+            var r_d = 0;
+            var r_s = 0;
+            var remainder_parts = {};
+            var remainder_string = {};
 
             if (isNaN(h) && isNaN(m) && isNaN(s) ){
               f.form("add errors", ["At least one of Hours, Minutes, Seconds has to be filled"]);
@@ -169,44 +185,54 @@
             s_p_m = total_time/dg_m;
             split_time_total = s_p_m * ds_m;
 
-            var split_parts = secs_to_parts(split_time_total);
-            if(split_parts.h > 0) split_string = split_parts.str.h  + ":";
-            if(split_parts.m > 0) split_string += split_parts.str.m + ":";
-            split_string += split_parts.str.s.substring(0,2);
+            split_parts = secs_to_parts(split_time_total);
+            split_string = build_time_str(split_parts);
 
             //remainder
-            var r_d_m = dg_m - Math.floor(dg_m / ds_m) * ds_m;
-            var r_d = get_x_from_m(r_d_m, f.form("get value", "splitdistanceunits"));
-            var r_s = s_p_m * r_d_m;
-            var remainder_parts = secs_to_parts(r_s);
-            var remainder_string = "";
-            if(remainder_parts.h > 0) remainder_string = remainder_parts.str.h  + ":";
-            if(remainder_parts.m > 0) remainder_string += remainder_parts.str.m + ":";
-            remainder_string += remainder_parts.str.s.substring(0,2);
+            r_d_m = dg_m - Math.floor(dg_m / ds_m) * ds_m;
+            r_d = get_x_from_m(r_d_m, f.form("get value", "splitdistanceunits"));
+            r_s = s_p_m * r_d_m;
+            remainder_parts = secs_to_parts(r_s);
+            remainder_string = build_time_str(remainder_parts);
             r_d_str = r_d.toLocaleString('en', {maximumFractionDigits:1,useGrouping:false});
 
-            $('.ui.statistic .value')
-                    .text(split_string)
+            $('.ui.pace.statistic .value')
+                    .text(split_string.time)
                     .append($('<span>')
-                      .text(split_parts.str.s.substring(2,5)));
+                      .text(split_string.frac));
 
-            $('.ui.statistic .label')
+            $('.ui.pace.statistic .label')
                     .text("PER "+ f.form("get value", "split_distance")+" ")
                     .append($('<span>')
                       .text(f.form("get value", "splitdistanceunits")));
 
-            $('.ui.mini.statistic .value')
-                    .text(remainder_string)
+            $('.remainder.row .ui.statistic .value')
+                    .text(remainder_string.time)
                     .append($('<span>')
-                      .text(remainder_parts.str.s.substring(2,5)));
+                      .text(remainder_string.frac));
 
-            $('.ui.mini.statistic .label')
+            $('.remainder.row .ui.statistic .label')
                     .text("for remaining "+ r_d_str +" ")
                     .append($('<span>')
                       .text(f.form("get value", "splitdistanceunits")));
 
-            if(! $('.ui.results.transition').transition('is visible')) {
-              $('.ui.results.transition').transition('drop');
+            if(r_d_str == "0" || dg_m < ds_m){
+              if(remainder_row.transition('is visible')){
+                remainder_row.transition('drop');
+              }
+            }else{
+              if(!remainder_row.transition('is visible')){
+                remainder_row.transition('drop');
+              }
+            }
+
+            if(dg_m >= ds_m){
+              $('.ui.pace.statistic .label span')
+                .append(" ("+Math.floor(dg_m / ds_m)+" times)");
+            }
+
+            if(! results_segment.transition('is visible')) {
+              results_segment.transition('drop');
             }
 
             return false;
@@ -214,15 +240,14 @@
         });
 
         $('.button.reset').click(function(e){
-          if($('.ui.results.transition').transition('is visible')){
-            $('.ui.results.transition').transition('drop');
+          if(results_segment.transition('is visible')){
+            results_segment.transition('drop');
           }
-          $('form.form').removeClass('error');
+          f.removeClass('error');
         });
 
         $('.example .button#tenk').click(function(e){
-          $('form.form')
-            .form('set values', {
+          f.form('set values', {
                 goal_hours        : '',
                 goal_minutes      : '45',
                 goal_seconds      : '',
@@ -235,8 +260,7 @@
         });
 
         $('.example .button#fifteen').click(function(e){
-          $('form.form')
-            .form('set values', {
+          f.form('set values', {
                 goal_hours        : '',
                 goal_minutes      : '4',
                 goal_seconds      : '5.75',
@@ -249,8 +273,7 @@
         });
 
         $('.example .button#threek').click(function(e){
-          $('form.form')
-            .form('set values', {
+          f.form('set values', {
                 goal_hours        : '',
                 goal_minutes      : '',
                 goal_seconds      : '82',
@@ -295,7 +318,7 @@
             <div class="ui middle aligned divided list">
               <div class="item">
                 <div class="right floated content">
-                  <div class="ui tiny button" id="tenk">Use</div>
+                  <div class="ui tiny button" id="tenk">Try</div>
                 </div>
                 <div class="content">
                   Calculate 1km splits for a 10km race
@@ -303,7 +326,7 @@
               </div>
               <div class="item">
                 <div class="right floated content">
-                  <div class="ui tiny button" id="fifteen">Use</div>
+                  <div class="ui tiny button" id="fifteen">Try</div>
                 </div>
                 <div class="content">
                   Calculate 400m track lap splits for a 1500m race
@@ -311,7 +334,7 @@
               </div>
               <div class="item">
                 <div class="right floated content">
-                  <div class="ui tiny button" id="threek">Use</div>
+                  <div class="ui tiny button" id="threek">Try</div>
                 </div>
                 <div class="content">
                   Use split distance larger than race to estimate endtime; Predict 3km race time based on 400m split
@@ -386,7 +409,7 @@
           <div class="ui transition hidden results segment ">
             <div class="ui centered grid">
               <div class="row">
-                <div class="ui statistic">
+                <div class="ui pace statistic">
                   <div class="value">
                     1
                   </div>
@@ -395,13 +418,13 @@
                   </div>
                 </div>
               </div>
-              <div class="row">
+              <div class="transition hidden remainder row">
                 <div class="ui grey horizontal mini statistic">
                   <div class="value">
                     01:20.22
                   </div>
                   <div class="label">
-                    per 0.5 km
+                    for reamaining 300 m
                   </div>
                 </div>
               </div>
