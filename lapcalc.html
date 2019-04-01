@@ -21,6 +21,12 @@
     .statistic > .label > span{
       text-transform: none;
     }
+    .ui.attached.inverted.block.header {
+  	   background: #545454 linear-gradient(transparent,rgba(0,0,0,.05));
+    }
+    .ui.main.container {
+    	padding-top: 2em;
+    }
 
     </style>
 
@@ -211,6 +217,7 @@
           if($('.ui.results.transition').transition('is visible')){
             $('.ui.results.transition').transition('drop');
           }
+          $('form.form').removeClass('error');
         });
 
         $('.example .button#tenk').click(function(e){
@@ -262,64 +269,60 @@
 	</head>
 	<body>
     <div class="ui main container">
-  		<div class="ui masthead vertical segment">
-  			<div class="ui container">
-  				<div class="introduction">
-  					<h1 class="ui header">
-  					       Lap Calculator
-  					<div class="sub header">Caclutate lap times or splits for various races</div>
-  					</h1>
-  				</div>
-          <div class="ui accordion">
-            <div class="active title">
-              <i class="dropdown icon"></i>
-              Introduction
-            </div>
-            <div class="active content">
-              Calculate splits for a goal time over a certain race distance and
-              split length. This calculator was designed for track and field
-              distances, it can also be used for ultra marathons, road races,
-              cycling races, swim races, etc. Just enter your goal time, race
-              distance, and your desired distance for splits.
-            </div>
-            <div class="title">
-              <i class="dropdown icon"></i>
-              Examples
-            </div>
-            <div class="content example">
-              <div class="ui middle aligned divided list">
-                <div class="item">
-                  <div class="right floated content">
-                    <div class="ui tiny button" id="tenk">Use</div>
-                  </div>
-                  <div class="content">
-                    Calculate 1km splits for a 10km race
-                  </div>
+      <h1 class="ui inverted top attached block header">
+             Lap Calculator
+      <div class="sub header">Caclutate lap times or splits for various races</div>
+      </h1>
+
+      <div class="ui bottom attached segment">
+        <div class="ui accordion">
+          <div class="active title">
+            <i class="dropdown icon"></i>
+            Introduction
+          </div>
+          <div class="active content">
+            Calculate splits for a goal time over a certain race distance and
+            split length. This calculator was designed for track and field
+            distances, it can also be used for ultra marathons, road races,
+            cycling races, swim races, etc. Just enter your goal time, race
+            distance, and your desired distance for splits.
+          </div>
+          <div class="title">
+            <i class="dropdown icon"></i>
+            Examples
+          </div>
+          <div class="content example">
+            <div class="ui middle aligned divided list">
+              <div class="item">
+                <div class="right floated content">
+                  <div class="ui tiny button" id="tenk">Use</div>
                 </div>
-                <div class="item">
-                  <div class="right floated content">
-                    <div class="ui tiny button" id="fifteen">Use</div>
-                  </div>
-                  <div class="content">
-                    Calculate 400m track lap splits for a 1500m race
-                  </div>
-                </div>
-                <div class="item">
-                  <div class="right floated content">
-                    <div class="ui tiny button" id="threek">Use</div>
-                  </div>
-                  <div class="content">
-                    Use split distance larger than race to estimate endtime; Predict 3km race time based on 400m split
-                  </div>
+                <div class="content">
+                  Calculate 1km splits for a 10km race
                 </div>
               </div>
-  					</div>
+              <div class="item">
+                <div class="right floated content">
+                  <div class="ui tiny button" id="fifteen">Use</div>
+                </div>
+                <div class="content">
+                  Calculate 400m track lap splits for a 1500m race
+                </div>
+              </div>
+              <div class="item">
+                <div class="right floated content">
+                  <div class="ui tiny button" id="threek">Use</div>
+                </div>
+                <div class="content">
+                  Use split distance larger than race to estimate endtime; Predict 3km race time based on 400m split
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
 
-  			</div>
-  		</div>
       <div class="ui segment">
-
         <form class="ui tiny form">
           <h4 class="ui dividing header">Goal Performance</h4>
           <div class="three fields">
@@ -379,34 +382,36 @@
               </div>
             </div>
           </div>
+
+          <div class="ui transition hidden results segment ">
+            <div class="ui centered grid">
+              <div class="row">
+                <div class="ui statistic">
+                  <div class="value">
+                    1
+                  </div>
+                  <div class="label">
+                    per km
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="ui grey horizontal mini statistic">
+                  <div class="value">
+                    01:20.22
+                  </div>
+                  <div class="label">
+                    per 0.5 km
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="ui error message"></div>
           <div class="ui primary submit button">Submit</div>
           <div class="ui reset button">Clear</div>
         </form>
-      </div>
-      <div class="ui transition hidden results segment ">
-        <div class="ui centered grid">
-          <div class="row">
-            <div class="ui statistic">
-              <div class="value">
-                1
-              </div>
-              <div class="label">
-                per km
-              </div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="ui grey horizontal mini statistic">
-              <div class="value">
-                01:20.22
-              </div>
-              <div class="label">
-                per 0.5 km
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
 
