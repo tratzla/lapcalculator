@@ -246,6 +246,19 @@
           f.removeClass('error');
         });
 
+        $('.example .button#fifteen').click(function(e){
+          f.form('set values', {
+                goal_hours        : '',
+                goal_minutes      : '4',
+                goal_seconds      : '5.75',
+                goal_distance     : '1500',
+                goaldistanceunits : 'm',
+                split_distance    : '400',
+                splitdistanceunits: 'm'
+              })
+            .form("submit");
+        });
+
         $('.example .button#tenk').click(function(e){
           f.form('set values', {
                 goal_hours        : '',
@@ -259,15 +272,15 @@
             .form("submit");
         });
 
-        $('.example .button#fifteen').click(function(e){
+        $('.example .button#bigultra').click(function(e){
           f.form('set values', {
-                goal_hours        : '',
-                goal_minutes      : '4',
-                goal_seconds      : '5.75',
-                goal_distance     : '1500',
-                goaldistanceunits : 'm',
-                split_distance    : '400',
-                splitdistanceunits: 'm'
+                goal_hours        : '19',
+                goal_minutes      : '',
+                goal_seconds      : '',
+                goal_distance     : '100',
+                goaldistanceunits : 'mile',
+                split_distance    : '1',
+                splitdistanceunits: 'km'
               })
             .form("submit");
         });
@@ -306,9 +319,11 @@
           <div class="active content">
             Calculate splits for a goal time over a certain race distance and
             split length. This calculator was designed for track and field
-            distances, it can also be used for ultra marathons, road races,
+            distances, but it can also be used for ultra marathons, road races,
             cycling races, swim races, etc. Just enter your goal time, race
             distance, and your desired distance for splits.
+            <br><br>
+            Advanced: You can also estimate your race time by entering your goal split time and split distance under "Goal Performance" and your race distance under "Split Distance".
           </div>
           <div class="title">
             <i class="dropdown icon"></i>
@@ -318,18 +333,26 @@
             <div class="ui middle aligned divided list">
               <div class="item">
                 <div class="right floated content">
-                  <div class="ui tiny button" id="tenk">Try</div>
-                </div>
-                <div class="content">
-                  Calculate 1km splits for a 10km race
-                </div>
-              </div>
-              <div class="item">
-                <div class="right floated content">
                   <div class="ui tiny button" id="fifteen">Try</div>
                 </div>
                 <div class="content">
                   Calculate 400m track lap splits for a 1500m race
+                </div>
+              </div>
+              <div class="item">
+                <div class="right floated content">
+                  <div class="ui tiny button" id="bigultra">Try</div>
+                </div>
+                <div class="content">
+                  Calculate 1km splits for a 100mile race
+                </div>
+              </div>
+              <div class="item">
+                <div class="right floated content">
+                  <div class="ui tiny button" id="tenk">Try</div>
+                </div>
+                <div class="content">
+                  Calculate 1km splits for a 10km race
                 </div>
               </div>
               <div class="item">
@@ -370,12 +393,13 @@
           <div class="field">
             <label>Distance Units</label>
             <div class="ui selection dropdown">
-              <input type="hidden" name="goaldistanceunits" value="km">
+              <input type="hidden" name="goaldistanceunits" value="m">
               <div class="text">km</div>
               <i class="dropdown icon"></i>
               <div class="menu">
-                  <div class="item" data-value="km">km</div>
                   <div class="item" data-value="m">m</div>
+                  <div class="item" data-value="km">km</div>
+                  <div class="item" data-value="yd">yd</div>
                   <div class="item" data-value="mi">mile</div>
                   <div class="item" data-value="ft">ft</div>
                   <div class="item" data-value="pc">parsec</div>
@@ -392,15 +416,16 @@
             <div class="field">
               <label>Split Distance Units</label>
               <div class="ui selection dropdown">
-                <input type="hidden" name="splitdistanceunits" value="km">
+                <input type="hidden" name="splitdistanceunits" value="m">
                 <div class="text">km</div>
                 <i class="dropdown icon"></i>
                 <div class="menu">
-                    <div class="item" data-value="km">km</div>
-                    <div class="item" data-value="m">m</div>
-                    <div class="item" data-value="mi">mile</div>
-                    <div class="item" data-value="ft">ft</div>
-                    <div class="item" data-value="pc">parsec</div>
+                  <div class="item" data-value="m">m</div>
+                  <div class="item" data-value="km">km</div>
+                  <div class="item" data-value="yd">yd</div>
+                  <div class="item" data-value="mi">mile</div>
+                  <div class="item" data-value="ft">ft</div>
+                  <div class="item" data-value="pc">parsec</div>
                 </div>
               </div>
             </div>
