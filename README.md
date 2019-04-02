@@ -1,2 +1,2 @@
 # lapcalculator
-Simple webapp for calculating lap times
+Simple webapp for calculating lap times.
