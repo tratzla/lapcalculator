@@ -49,9 +49,9 @@
         /*
         Takes in seconds and calculates the number of hours, minutes and Seconds
         as well as generates a string representation of each time rounded nicely
-        for conistant display
+        for consistant display
         INPUT:
-          secs [flaot] number of seconds for calculation
+          secs [float] number of seconds for calculation
         OUTPUT:
           [obj] Structure with each time unit as float and a string
                 representation of each time unit
@@ -108,14 +108,14 @@
       }
 
       /*
-      Converts a distance in any unit into metres.
+      Converts a distance from any unit into metres.
       */
       function get_m_from_x(d_in, u_in){
         return convert_m(d_in, u_in, true);
       }
 
       /*
-      Converts a distance in any unit into metres.
+      Converts a distance from metres into any other.
       */
       function get_x_from_m(d_in, u_in){
         return convert_m(d_in, u_in, false);
