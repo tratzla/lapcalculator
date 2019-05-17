@@ -45,51 +45,18 @@
     </style>
 
     <script type="text/javascript">
-      function build_time_str(parts){
-        string_parts = {};
-        string_parts.time = "";
-        if(parts.h > 0) string_parts.time = parts.str.h  + ":";
-        if(parts.m > 0) string_parts.time += parts.str.m + ":";
-        string_parts.time += parts.str.s.substring(0,2);
-        string_parts.frac = parts.str.s.substring(2,5);
-        return string_parts;
-      }
-      function get_m_from_x(d_in, u_in){
-        return convert_m(d_in, u_in, true);
-      }
-      function get_x_from_m(d_in, u_in){
-        return convert_m(d_in, u_in, false);
-      }
 
-      function convert_m(d_in, u_in, x_to_m){
-        var factor = 1;
-        switch(u_in){
-          case "km":
-            factor = 1000;
-            break;
-          case "m":
-            factor = 1;
-            break;
-          case "mi":
-            factor = 1609.344;
-            break;
-          case "yd":
-            factor = 0.9144;
-            break;
-          case "ft":
-            factor = 0.3048;
-            break;
-          case "pc":
-            factor = 30856775814913673;
-            break;
-        }
-
-        if(!x_to_m) factor = 1/factor;
-        return d_in*factor;
-
-      }
+        /*
+        Takes in seconds and calculates the number of hours, minutes and Seconds
+        as well as generates a string representation of each time rounded nicely
+        for conistant display
+        INPUT:
+          secs [flaot] number of seconds for calculation
+        OUTPUT:
+          [obj] Structure with each time unit as float and a string
+                representation of each time unit
+        */
       function secs_to_parts(secs){
-
         var parts = {};
         parts.str = {};
         parts.h = Math.floor(secs / 3600);
@@ -119,16 +86,95 @@
         return parts;
       }
 
+      /*
+      Takes in a time_parts structure and generates an object contatining
+      two strings: one with seconds as well as minutes and hours (if the time is
+      more than 60 seconds) separated by colons, and the decimal fraction of a
+      second. This checks for zeros in the parts and prepares for nice display
+      on the webpage.
+      INPUT:
+        parts [obj] Structure with each of hours, minutes, seconds as members
+      OUTPUT:
+        [obj] Structure with string representation of the input
+      */
+      function build_time_str(parts){
+        string_parts = {};
+        string_parts.time = "";
+        if(parts.h > 0) string_parts.time = parts.str.h  + ":";
+        if(parts.m > 0) string_parts.time += parts.str.m + ":";
+        string_parts.time += parts.str.s.substring(0,2);
+        string_parts.frac = parts.str.s.substring(2,5);
+        return string_parts;
+      }
+
+      /*
+      Converts a distance in any unit into metres.
+      */
+      function get_m_from_x(d_in, u_in){
+        return convert_m(d_in, u_in, true);
+      }
+
+      /*
+      Converts a distance in any unit into metres.
+      */
+      function get_x_from_m(d_in, u_in){
+        return convert_m(d_in, u_in, false);
+      }
+
+
+      /*
+      Converts a distance from any unit into metres or vice-versa.
+      INPUT:
+        d_in [float] The distance that needs to be converted into metres
+        u_in [string] The unit that the input distance is in.
+        x_to_m [bool] Direction of the conversion.
+                    true=convert to metres
+                    false=convert from metres
+      OUTPUT:
+        [float] The distance in after conversion
+      */
+      function convert_m(d_in, u_in, x_to_m){
+        var factor = 1;
+        switch(u_in){
+          case "km":
+            factor = 1000;
+            break;
+          case "m":
+            factor = 1;
+            break;
+          case "mi":
+            factor = 1609.344;
+            break;
+          case "yd":
+            factor = 0.9144;
+            break;
+          case "ft":
+            factor = 0.3048;
+            break;
+          case "pc":
+            factor = 30856775814913673;
+            break;
+        }
+
+        if(!x_to_m) factor = 1/factor;
+        return d_in*factor;
+
+      }
+
+
+
       $(document).ready(function() {
 
         var f = $('form.form');
         var results_segment = $('.ui.results.transition');
         var remainder_row = $('.remainder.row.transition');
 
+        //Initialize dropdown behavior
         $('.selection.dropdown')
           .dropdown()
         ;
 
+        //Initialize form with Semantic-UI error checking
         f.form({
               fields: {
                 goal_distance      : 'decimal',
@@ -163,25 +209,37 @@
                   }]
               }
         }).api({
+          /*We will attach an API setting to the form in order to interact easily
+          with the form in js. We won't actually send any requests outside of
+          the browser
+          */
+
+          /*
+          Do all the distance conversion in this beforeSend function. then
+          return false to abort HTTP request
+          */
           beforeSend: function(settings){
             var h = parseFloat(f.form("get value", "goal_hours"));
             var m = parseFloat(f.form("get value", "goal_minutes"));
             var s = parseFloat(f.form("get value", "goal_seconds"));
-            var dg = parseFloat(f.form("get value", "goal_distance"));
-            var ds = parseFloat(f.form("get value", "split_distance"));
+            var distance_goal = parseFloat(f.form("get value", "goal_distance"));
+            var distance_split = parseFloat(f.form("get value", "split_distance"));
             var total_time = 0;
-            var dg_m = 0;
-            var ds_m = 0;
-            var s_p_m = 0;
-            var split_time_total = 0;
+            var distance_goal_m = 0;
+            var distance_split_m = 0;
+            var sec_per_m = 0;
+            var split_time_total = 0; //In seconds
             var split_parts = {};
             var split_string = {};
-            var r_d_m = 0;
-            var r_d = 0;
-            var r_s = 0;
+            var remainder_distance_m = 0;
+            var remainder_distance = 0;
+            var remainder_sec = 0;
             var remainder_parts = {};
             var remainder_string = {};
 
+            /*
+            Further check for actually getting data in from form
+            */
             if (isNaN(h) && isNaN(m) && isNaN(s) ){
               f.form("add errors", ["At least one of Hours, Minutes, Seconds has to be filled"]);
               return false;
@@ -190,23 +248,31 @@
             if(!isNaN(m)) total_time +=  m*60;
             if(!isNaN(s)) total_time +=  s;
 
-            dg_m = get_m_from_x(dg, f.form("get value", "goaldistanceunits"));
-            ds_m = get_m_from_x(ds, f.form("get value", "splitdistanceunits"));
+            /*
+            Calculate split times and distances
+            */
+            distance_goal_m = get_m_from_x(distance_goal, f.form("get value", "goaldistanceunits"));
+            distance_split_m = get_m_from_x(distance_split, f.form("get value", "splitdistanceunits"));
 
-            s_p_m = total_time/dg_m;
-            split_time_total = s_p_m * ds_m;
+            sec_per_m = total_time/distance_goal_m;
+            split_time_total = sec_per_m * distance_split_m;
 
             split_parts = secs_to_parts(split_time_total);
             split_string = build_time_str(split_parts);
 
-            //remainder
-            r_d_m = dg_m - Math.floor(dg_m / ds_m) * ds_m;
-            r_d = get_x_from_m(r_d_m, f.form("get value", "splitdistanceunits"));
-            r_s = s_p_m * r_d_m;
-            remainder_parts = secs_to_parts(r_s);
+            //remainder time after doing whole splits (eg 300m after 3 laps of 400m track in a 1500m)
+            remainder_distance_m = distance_goal_m - Math.floor(distance_goal_m / distance_split_m) * distance_split_m;
+            remainder_distance = get_x_from_m(remainder_distance_m, f.form("get value", "splitdistanceunits"));
+            remainder_sec = sec_per_m * remainder_distance_m;
+            remainder_parts = secs_to_parts(remainder_sec);
             remainder_string = build_time_str(remainder_parts);
-            r_d_str = r_d.toLocaleString('en', {maximumFractionDigits:1,useGrouping:false});
 
+            //convert the distance remaining into a rounded string
+            r_d_str = remainder_distance.toLocaleString('en', {maximumFractionDigits:1,useGrouping:false});
+
+            /*
+            Insert results into parts of the webpage
+            */
             $('.ui.pace.statistic .value')
                     .text(split_string.time)
                     .append($('<span>')
@@ -227,7 +293,8 @@
                     .append($('<span>')
                       .text(f.form("get value", "splitdistanceunits")));
 
-            if(r_d_str == "0" || dg_m < ds_m){
+            // If the split distance doesn't fit into the race neatly, show remainder
+            if(r_d_str == "0" || distance_goal_m < distance_split_m){
               if(remainder_row.transition('is visible')){
                 remainder_row.transition('drop');
               }
@@ -237,19 +304,26 @@
               }
             }
 
-            if(dg_m >= ds_m){
+            //If it's a true split for a long race, show the number of laps
+            if(distance_goal_m >= distance_split_m){
               $('.ui.pace.statistic .label span')
-                .append(" ("+Math.floor(dg_m / ds_m)+" times)");
+                .append(" ("+Math.floor(distance_goal_m / distance_split_m)+" times)");
             }
 
+            //Make sure the results are actually visible (should only be needed after first calc)
             if(! results_segment.transition('is visible')) {
               results_segment.transition('drop');
             }
 
+            /*Returning false actually prevents any HTTP request. This is wanted
+            since we really only wanted to do some conversion in js in the browser
+            and not wanted to send anything back to the server. */
             return false;
           }
         });
 
+
+        //Hide results after reseting
         $('.button.reset').click(function(e){
           if(results_segment.transition('is visible')){
             results_segment.transition('drop');
@@ -257,6 +331,12 @@
           f.removeClass('error');
         });
 
+
+        /*
+        Attach events to the examples buttons that will fill in the form with
+        the example data and automatically submit the form (which will then
+        trigger the lap calculation)
+        */
         $('.example .button#fifteen').click(function(e){
           f.form('set values', {
                 goal_hours        : '',
@@ -309,6 +389,7 @@
             .form("submit");
         });
 
+        // Initialize the accordion Semantic-UI module
         $('.accordion').accordion();
 
       });
@@ -484,7 +565,7 @@
             run with <a href="https://caltaf.com/">Caltaf</a>
           </div>
           <div class="item">
-            <a href="https://github.com/tratzla/lapcalculator"><i class="github icon"></i>code at github</a>
+            <a href="https://github.com/tratzla/lapcalculator"><i class="github icon"></i>source</a>
           </div>
           <div class="item">
             urged by <a href="https://lratz.ca" target="_blank">luke</a>
